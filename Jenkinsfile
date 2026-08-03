@@ -37,6 +37,8 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
+                  script {
+               withCredentials([[$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'AWS']]) {
                 sh '''
                 aws eks update-kubeconfig --region ap-south-1 --name trend-cluster
                 kubectl apply -f deployment.yaml
@@ -44,6 +46,7 @@ pipeline {
                 '''
             }
         }
+            }
 
     }
 
