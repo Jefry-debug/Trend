@@ -38,6 +38,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh '''
+                aws eks update-kubeconfig --region ap-south-1 --name trend-cluster
                 kubectl apply -f deployment.yaml
                 kubectl apply -f service.yaml
                 '''
