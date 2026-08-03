@@ -1,15 +1,19 @@
 pipeline {
     agent any
 
+    environment {
+        IMAGE_NAME = "jefryjo/trend-app:latest"
+    }
+
     stages {
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t jefryjo/trend-app:latest .'
+                sh 'docker build -t $IMAGE_NAME .'
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Login to DockerHub') {
             steps {
                 withCredentials([
                     usernamePassword(
@@ -18,14 +22,41 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-
                     sh '''
                     echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    docker push jefryjo/trend-app:latest
-                    docker logout
                     '''
                 }
             }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                sh 'docker push $IMAGE_NAME'
+            }
+        }
+
+        stage('Deploy to Kubernetes') {
+            steps {
+                sh '''
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                '''
+            }
+        }
+
+    }
+
+    post {
+        always {
+            sh 'docker logout'
+        }
+
+        success {
+            echo 'Pipeline completed successfully.'
+        }
+
+        failure {
+            echo 'Pipeline failed.'
         }
     }
 }
